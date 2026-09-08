@@ -1,0 +1,5 @@
+{{- with secret "secret/data/app/db" -}}
+POSTGRES_USER={{ .Data.data.username }}
+POSTGRES_PASSWORD={{ .Data.data.password }}
+POSTGRES_DB={{ .Data.data.dbname }}
+{{- end -}}

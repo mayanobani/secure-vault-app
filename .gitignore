@@ -1,0 +1,15 @@
+# Vault runtime state — never commit real unseal keys/tokens/secrets
+vault-infra/data/*
+!vault-infra/data/.gitkeep
+
+app-stack/secrets/
+app-stack/token/
+app-stack/role_id
+app-stack/secret_id
+
+# Vault init output if you save it to a file
+vault-init-output.txt
+
+__pycache__/
+*.pyc
+.env

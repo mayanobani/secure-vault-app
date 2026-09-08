@@ -1,0 +1,30 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t myapp-backend:latest ./backend
+
+      - name: Build frontend image
+        run: docker build -t myapp-frontend:latest ./frontend
+
+      - name: Deploy stack via Docker Compose
+        working-directory: ./app-stack
+        run: |
+          docker compose down --remove-orphans
+          docker compose up -d --build
+
+      - name: Show running services
+        working-directory: ./app-stack
+        run: docker compose ps

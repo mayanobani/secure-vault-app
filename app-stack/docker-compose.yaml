@@ -1,0 +1,74 @@
+version: "3.8"
+
+# NOTE on structure: the task requires exactly three application services
+# (database, backend, frontend). The Vault Agent is not an application
+# service — it's the secrets-delivery sidecar that all three depend on.
+# It's declared here so credentials are pulled from Vault at startup
+# instead of being hardcoded as plaintext env vars / .env files.
+
+services:
+  vault-agent:
+    image: hashicorp/vault:1.17
+    container_name: vault-agent
+    command: ["vault", "agent", "-config=/vault/agent/config/vault-agent-config.hcl"]
+    volumes:
+      - ./vault-agent-config.hcl:/vault/agent/config/vault-agent-config.hcl:ro
+      - ./templates:/vault/agent/templates:ro
+      - ./secrets:/vault/secrets
+      - ./token:/vault/agent/token
+      - ./role_id:/vault/agent/config/role_id:ro
+      - ./secret_id:/vault/agent/config/secret_id:ro
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    container_name: app-db
+    depends_on:
+      - vault-agent
+    entrypoint: ["/entrypoint/db-entrypoint.sh"]
+    volumes:
+      - ./db-entrypoint.sh:/entrypoint/db-entrypoint.sh:ro
+      - ./secrets:/vault/secrets:ro
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../backend
+    container_name: app-backend
+    depends_on:
+      - db
+      - vault-agent
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    volumes:
+      - ./secrets:/vault/secrets:ro
+    ports:
+      - "5000:5000"
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+    container_name: app-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - appnet
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  appnet:
+    driver: bridge
