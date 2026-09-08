@@ -2,8 +2,10 @@ import os
 import time
 import psycopg2
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 DB_HOST = os.environ.get("DB_HOST", "db")
 DB_PORT = os.environ.get("DB_PORT", "5432")
@@ -80,4 +82,4 @@ def add_item():
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000) # nosec B104 -- required for container networking, not directly internet-facing
